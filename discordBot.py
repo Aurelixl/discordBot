@@ -13,7 +13,7 @@ import asyncio
 from credentials import*
 from yt_dl import*
 from discord.ext import commands
-from yahoo_fin import stock_info as si
+import yfinance as yf
 
 TOKEN = (DISCORD_TOKEN)
 help_command = commands.DefaultHelpCommand(no_category = 'Commands')
@@ -194,22 +194,28 @@ async def dm(ctx, users: commands.Greedy[discord.User], *, message):
 
 @bot.command(name="getPrice", help="showing current stock market price.", aliases=["getP"])
 async def getPrice(ctx, comp, number: int = 1):
-    value = si.get_live_price(comp)
+    price = yf.Ticker(comp)
+    price = price.info['regularMarketPrice']
     out = "Current price of "
+    curr = "$"
+    if "eur" in comp:
+        curr = "€"
     if number != 1:
         out = "Total value of {} shares ".format(number)
-    print("{}: getPrice     ".format(ctx.message.author.name) + "from: {}".format(comp) + "={}".format(value*number))
-    await ctx.send(out + comp + ": {}$".format(round(number *value,4)))
+    print("{}: getPrice     ".format(ctx.message.author.name) + "from: {}".format(comp) + "={}".format(price*number))
+    await ctx.send(out + comp + ": {}".format(round(number *price,4)) + curr)
 
 
 @bot.command(name="DOGE", help="show current DOGE Price.", aliases=["doge"])
 async def doge(ctx, currency: str = "eur", number: float = 1):
     out = "Current price:"
     if currency == "usd" :
-        doge = si.get_live_price("DOGE-USD")
+        price = yf.Ticker("DOGE-USD")
+        doge = price.info['regularMarketPrice']
         curr = "$"
     else:
-        doge = si.get_live_price("DOGE-EUR")
+        price = yf.Ticker("DOGE-EUR")
+        doge = price.info['regularMarketPrice']
         curr = "€"
 
     if number != 1 :
