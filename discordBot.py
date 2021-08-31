@@ -25,7 +25,6 @@ async def on_ready():
     await bot.change_presence(activity=discord.Game('Discord'))
     #await ainput()
 
-
 async def ainput():
     c = input(">")
     msg = c
@@ -169,7 +168,6 @@ async def resume(ctx):
     print("{}: Resume".format(ctx.message.author.name))
     #await status()
 
-
 @bot.command(name="echo", help="echo")
 async def echo(ctx, * , msg):
     await ctx.send(msg)
@@ -204,10 +202,6 @@ async def getPrice(ctx, comp, number: int = 1):
         out = "Total value of {} shares ".format(number)
     print("{}: getPrice     ".format(ctx.message.author.name) + "from: {}".format(comp) + "={}".format(price*number))
     await ctx.send(out + comp + ": {}".format(round(number *price,4)) + curr)
-<<<<<<< HEAD
-=======
-
->>>>>>> ccbe2bb43e957757ef3669d5ef7ec5d9759191ab
 
 @bot.command(name="DOGE", help="show current DOGE Price.", aliases=["doge"])
 async def doge(ctx, currency: str = "eur", number: float = 1):
@@ -240,7 +234,6 @@ async def log(ctx, file):
         await ctx.send(file=discord.File(r'{}latest.log'.format(dir)))
         print("log sent")
 
-
 @bot.command(name="kill" , help="kill program")
 async def kill(ctx):
     voice_client = ctx.message.guild.voice_client
@@ -253,6 +246,5 @@ async def kill(ctx):
     except:
         await bot.close()
         os._exit(0)
-
 
 bot.run(TOKEN)
