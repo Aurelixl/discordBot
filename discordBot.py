@@ -228,7 +228,7 @@ async def say(msg):
     await channel.send(msg)
 
 @bot.command(name="log")
-async def log(ctx, file):
+async def log(ctx, file: str = "latest"):
     dir = "/home/quigon/minecraft/Fabric-1.17.1/logs/"
     if "latest" in file:
         await ctx.send(file=discord.File(r'{}latest.log'.format(dir)))
