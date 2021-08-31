@@ -204,6 +204,10 @@ async def getPrice(ctx, comp, number: int = 1):
         out = "Total value of {} shares ".format(number)
     print("{}: getPrice     ".format(ctx.message.author.name) + "from: {}".format(comp) + "={}".format(price*number))
     await ctx.send(out + comp + ": {}".format(round(number *price,4)) + curr)
+<<<<<<< HEAD
+=======
+
+>>>>>>> ccbe2bb43e957757ef3669d5ef7ec5d9759191ab
 
 @bot.command(name="DOGE", help="show current DOGE Price.", aliases=["doge"])
 async def doge(ctx, currency: str = "eur", number: float = 1):
