@@ -77,43 +77,22 @@ async def leave(ctx):
 
 @bot.command(name='play', help='Bot plays song', aliases=["p"])
 async def play(ctx, *, url):
-    voice_client = ctx.message.guild.voice_client
-    try:
+    voice_client = ctx.voice_client
+    if voice_client == None:
         await ctx.message.author.voice.channel.connect()
-        server = ctx.message.guild
-        voice_channel = server.voice_client
+        voice_client = ctx.voice_client
 
-        async with ctx.typing():
-            filename = await YTDLSource.from_url(url, loop=bot.loop)
-            voice_channel.play(discord.FFmpegPCMAudio( source=filename))
-            await ctx.send('**Jetzt läuft:** {}'.format(getTitle()))
+    server = ctx.message.guild
+    voice_channel = server.voice_client
 
-    except:
-        try :
-            try:
-                voice_channel = ctx.message.guild.voice_client
-                voice_channel.stop()
+    if voice_client.is_playing():
+        voice_channel.stop()
 
-                server = ctx.message.guild
-                voice_channel = server.voice_client
+    async with ctx.typing():
+        file = await YTDLSource.from_url(url, loop=bot.loop)
+        voice_channel.play(discord.PCMVolumeTransformer(discord.FFmpegPCMAudio( source=file), 0.5))
 
-                async with ctx.typing():
-                    filename = await YTDLSource.from_url(url, loop=bot.loop)
-                    voice_channel.play(discord.FFmpegPCMAudio( source=filename))
-                    await ctx.send('**Jetzt läuft:** {}'.format(getTitle()))
-
-            except:
-                server = ctx.message.guild
-                voice_channel = server.voice_client
-
-                async with ctx.typing():
-                    filename = await YTDLSource.from_url(url, loop=bot.loop)
-                    voice_channel.play(discord.FFmpegPCMAudio( source=filename))
-                    await ctx.send('**Jetzt läuft:** {}'.format(getTitle()))
-
-        except:
-            await ctx.send("Fuck you.")
-
+    await ctx.send('**Jetzt läuft:** {}'.format(getTitle()))
     print("{}: Play song    ".format(ctx.message.author.name) + "Title: {}".format(getTitle()))
     await status()
 
