@@ -1,11 +1,6 @@
-"""
-@version 1.0
-@author Aurelius
-"""
 #!/usr/bin/env python3
 import discord
 import random
-import youtube_dl
 import os
 import ffmpeg
 import time
@@ -13,7 +8,9 @@ import asyncio
 from credentials import*
 from yt_dl import*
 from discord.ext import commands
-from yahoo_fin import stock_info as si
+import yfinance as yf
+import requests
+from discord import FFmpegPCMAudio, PCMVolumeTransformer
 
 TOKEN = (DISCORD_TOKEN)
 help_command = commands.DefaultHelpCommand(no_category = 'Commands')
@@ -23,14 +20,16 @@ bot = commands.Bot(command_prefix=commands.when_mentioned_or('#'), help_command 
 async def on_ready():
     print(f'{bot.user.name} has connected to Discord!')
     await bot.change_presence(activity=discord.Game('Discord'))
-    #await ainput()
 
-
-async def ainput():
-    c = input(">")
-    msg = c
-    await say(msg)
-    print("send:" + msg)
+@bot.event
+async def on_message(message):
+    if message.author.id == bot.user.id:
+        return
+    blacklist = ["#pferdegeruch!", "Hurensohn", "Wichser"]
+    msg_content = message.content.lower()
+    if any(word in msg_content for word in blacklist):
+        await message.delete()
+    await bot.process_commands(message)
 
 @bot.command(name='hello', help = 'Respondse Hello.')
 async def hello(ctx, msg):
@@ -44,13 +43,13 @@ async def roll(ctx, number_of_dice: int=1, number_of_sides: int=6):
         for _ in range(number_of_dice)
     ]
     await ctx.send(', '.join(dice))
-    print("{}: Rolled dice. Result: ".format(ctx.message.author.name) + ', '.join(dice))
+    print("{}: Hat gewürfelt. Ergebnis: ".format(ctx.message.author.name) + ', '.join(dice))
 
-@bot.command(name='join', help='Bot joins channel')
+@bot.command(name='join', help='Bot joint in Channel')
 async def join(ctx):
     voice_client = ctx.message.guild.voice_client
     if not ctx.message.author.voice:
-        await ctx.send("{} is not connected to a voice channel".format(ctx.message.author.name))
+        await ctx.send("{} ist in keinem Channel".format(ctx.message.author.name))
         return
     else:
         try:
@@ -60,9 +59,9 @@ async def join(ctx):
             channel = ctx.message.author.voice.channel
     await channel.connect()
     await ctx.send("joined {} to voice channel".format(ctx.message.author.name))
-    print("{}: Join channel".format(ctx.message.author.name))
+    print("{}: join channel".format(ctx.message.author.name))
 
-@bot.command(name='leave', help='Bot leaves channel')
+@bot.command(name='leave', help='Bot verlässt Channel')
 async def leave(ctx):
     voice_client = ctx.message.guild.voice_client
     try:
@@ -87,7 +86,7 @@ async def play(ctx, *, url):
         async with ctx.typing():
             filename = await YTDLSource.from_url(url, loop=bot.loop)
             voice_channel.play(discord.FFmpegPCMAudio( source=filename))
-            await ctx.send('**Now playing:** {}'.format(getTitle()))
+            await ctx.send('**Jetzt läuft:** {}'.format(getTitle()))
 
     except:
         try :
@@ -101,7 +100,7 @@ async def play(ctx, *, url):
                 async with ctx.typing():
                     filename = await YTDLSource.from_url(url, loop=bot.loop)
                     voice_channel.play(discord.FFmpegPCMAudio( source=filename))
-                    await ctx.send('**Now playing:** {}'.format(getTitle()))
+                    await ctx.send('**Jetzt läuft:** {}'.format(getTitle()))
 
             except:
                 server = ctx.message.guild
@@ -110,7 +109,7 @@ async def play(ctx, *, url):
                 async with ctx.typing():
                     filename = await YTDLSource.from_url(url, loop=bot.loop)
                     voice_channel.play(discord.FFmpegPCMAudio( source=filename))
-                    await ctx.send('**Now playing:** {}'.format(getTitle()))
+                    await ctx.send('**Jetzt läuft:** {}'.format(getTitle()))
 
         except:
             await ctx.send("Fuck you.")
@@ -128,9 +127,6 @@ async def status():
     await clear()
 
 async def clear():
-    #if pause == 1:
-        #return
-    #else:
     try:
     	os.remove(getFilename())
     except:
@@ -169,7 +165,6 @@ async def resume(ctx):
     print("{}: Resume".format(ctx.message.author.name))
     #await status()
 
-
 @bot.command(name="echo", help="echo")
 async def echo(ctx, * , msg):
     await ctx.send(msg)
@@ -194,38 +189,71 @@ async def dm(ctx, users: commands.Greedy[discord.User], *, message):
 
 @bot.command(name="getPrice", help="showing current stock market price.", aliases=["getP"])
 async def getPrice(ctx, comp, number: int = 1):
-    value = si.get_live_price(comp)
+    price = yf.Ticker(comp)
+    price = price.info['regularMarketPrice']
     out = "Current price of "
+    curr = "$"
+    if "eur" in comp:
+        curr = "€"
     if number != 1:
         out = "Total value of {} shares ".format(number)
-    print("{}: getPrice     ".format(ctx.message.author.name) + "from: {}".format(comp) + "={}".format(value*number))
-    await ctx.send(out + comp + ": {}$".format(round(number *value,4)))
-
+    print("{}: getPrice     ".format(ctx.message.author.name) + "from: {}".format(comp) + "={}".format(price*number))
+    await ctx.send(out + comp + ": {}".format(round(number *price,4)) + curr)
 
 @bot.command(name="DOGE", help="show current DOGE Price.", aliases=["doge"])
 async def doge(ctx, currency: str = "eur", number: float = 1):
     out = "Current price:"
     if currency == "usd" :
-        doge = si.get_live_price("DOGE-USD")
+        price = yf.Ticker("DOGE-USD")
+        doge = price.info['regularMarketPrice']
         curr = "$"
     else:
-        doge = si.get_live_price("DOGE-EUR")
+        price = yf.Ticker("DOGE-EUR")
+        doge = price.info['regularMarketPrice']
         curr = "€"
-
-    if number != 1 :
-        out = "Total value of {} DOGE coins:".format(number)
 
     print("{}: DOGE         ".format(ctx.message.author.name) + "price/value: {}".format(number*doge))
     await ctx.send(out + " {}".format(round(number *doge,4)) + curr)
 
 @bot.command(name="ping", help="Shows latency")
 async def ping(ctx):
-    await ctx.send("My ping is {} ms ".format(round(bot.latency * 1000)))
+    await ctx.send("Mein Ping ist {} ms ".format(round(bot.latency * 1000)))
     print("{}: Ping         ".format(ctx.message.author.name) + "Ping: {}".format(round(bot.latency * 1000)))
 
 async def say(msg):
     channel = bot.get_channel(756947903515197510)
     await channel.send(msg)
+
+@bot.command(name = "twitch", help = "check if a stream is on" )
+async def twitch(ctx, user):
+    url= 'https://www.twitch.tv/' +user
+    contents = requests.get(url).content.decode('utf-8')
+    if 'isLiveBroadcast' in contents:
+        await ctx.send(f"{user} ist live: \n{url}")
+    else:
+        await ctx.send(f"{user} scheint nicht live zu sein")
+
+@bot.command(name = "pferdegeruch!")
+async def pferd(ctx):
+    voice_client = ctx.voice_client
+    #await ctx.message.delete()
+    if voice_client == None:
+        await ctx.message.author.voice.channel.connect()
+        voice_client = ctx.voice_client
+
+    server = ctx.message.guild
+    voice_channel = server.voice_client
+
+    if voice_client.is_playing():
+        voice_channel.stop()
+    voice_channel.play(discord.PCMVolumeTransformer(discord.FFmpegPCMAudio( source="sounds/Du-stinkst-nach-Pferd.mp3"), 2))
+
+@bot.command(name="log")
+async def log(ctx, file: str = "latest"):
+    dir = "/home/quigon/minecraft/Fabric-1.17.1/logs/"
+    if "latest" in file:
+        await ctx.send(file=discord.File(r'{}latest.log'.format(dir)))
+        print("log sent")
 
 @bot.command(name="kill" , help="kill program")
 async def kill(ctx):
@@ -239,6 +267,5 @@ async def kill(ctx):
     except:
         await bot.close()
         os._exit(0)
-
 
 bot.run(TOKEN)
