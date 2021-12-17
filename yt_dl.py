@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-import youtube_dl
+import yt_dlp as youtube_dl
 import discord
 
 youtube_dl.utils.bug_reports_message = lambda: ''
@@ -47,7 +47,6 @@ def getTitle():
 
 def getDuration():
     return duration
-    
+
 def getFilename():
 	return filename
-
